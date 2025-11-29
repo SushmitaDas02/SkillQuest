@@ -4,9 +4,12 @@ import React, { useState, useEffect } from 'react';
 const AdminPanel = () => {
   const [events, setEvents] = useState([]);
   const [students, setStudents] = useState([]);
+  const [feedbacks, setFeedbacks] = useState([]);
   const [activeTab, setActiveTab] = useState('events');
   const [showCreateEvent, setShowCreateEvent] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
+  const [selectedFeedback, setSelectedFeedback] = useState(null);
+  const [feedbackFilter, setFeedbackFilter] = useState('all');
 
   // Form state for creating/editing events
   const [eventForm, setEventForm] = useState({
@@ -110,8 +113,82 @@ const AdminPanel = () => {
       }
     ];
 
+    const mockFeedbacks = [
+      {
+        id: 1,
+        studentName: "John Smith",
+        studentEmail: "john.smith@student.edu",
+        studentId: 1,
+        category: "clubs",
+        title: "More Programming Club Activities",
+        description: "The programming club should host more hands-on workshops and coding sessions. Current meetings are too theoretical and could benefit from practical projects.",
+        urgency: "medium",
+        status: "pending",
+        anonymous: false,
+        timestamp: "2024-01-15T10:30:00Z",
+        adminNotes: ""
+      },
+      {
+        id: 2,
+        studentName: "Anonymous",
+        studentEmail: "",
+        studentId: null,
+        category: "facilities",
+        title: "Library Hours Extension",
+        description: "The library should extend its opening hours during exam periods. Many students study late and need access to resources.",
+        urgency: "high",
+        status: "in-progress",
+        anonymous: true,
+        timestamp: "2024-01-16T14:20:00Z",
+        adminNotes: "Discussing with library management team"
+      },
+      {
+        id: 3,
+        studentName: "Sarah Johnson",
+        studentEmail: "sarah.j@student.edu",
+        studentId: 2,
+        category: "technology",
+        title: "Campus Wi-Fi Issues",
+        description: "The Wi-Fi in the student dormitories is very unstable during peak hours. This affects online classes and study sessions.",
+        urgency: "critical",
+        status: "pending",
+        anonymous: false,
+        timestamp: "2024-01-17T09:15:00Z",
+        adminNotes: ""
+      },
+      {
+        id: 4,
+        studentName: "Mike Chen",
+        studentEmail: "mike.chen@student.edu",
+        studentId: 3,
+        category: "sports",
+        title: "Basketball Court Maintenance",
+        description: "The outdoor basketball courts need resurfacing and new nets. The current condition makes it difficult to play properly.",
+        urgency: "medium",
+        status: "completed",
+        anonymous: false,
+        timestamp: "2024-01-10T16:45:00Z",
+        adminNotes: "Scheduled for maintenance next month"
+      },
+      {
+        id: 5,
+        studentName: "Anonymous",
+        studentEmail: "",
+        studentId: null,
+        category: "dining",
+        title: "More Vegetarian Options",
+        description: "The campus cafeteria should offer more diverse vegetarian and vegan meal options. Current choices are very limited.",
+        urgency: "medium",
+        status: "pending",
+        anonymous: true,
+        timestamp: "2024-01-18T12:00:00Z",
+        adminNotes: ""
+      }
+    ];
+
     setEvents(mockEvents);
     setStudents(mockStudents);
+    setFeedbacks(mockFeedbacks);
   }, []);
 
   const handleCreateEvent = (e) => {
@@ -199,6 +276,57 @@ const AdminPanel = () => {
     ));
   };
 
+  // Feedback Management Functions
+  const updateFeedbackStatus = (feedbackId, status) => {
+    setFeedbacks(feedbacks.map(feedback => 
+      feedback.id === feedbackId 
+        ? { ...feedback, status }
+        : feedback
+    ));
+  };
+
+  const addAdminNotes = (feedbackId, notes) => {
+    setFeedbacks(feedbacks.map(feedback => 
+      feedback.id === feedbackId 
+        ? { ...feedback, adminNotes: notes }
+        : feedback
+    ));
+  };
+
+  const deleteFeedback = (feedbackId) => {
+    if (window.confirm('Are you sure you want to delete this feedback?')) {
+      setFeedbacks(feedbacks.filter(feedback => feedback.id !== feedbackId));
+    }
+  };
+
+  const getFeedbackAnalytics = () => {
+    const totalFeedbacks = feedbacks.length;
+    const pendingFeedbacks = feedbacks.filter(f => f.status === 'pending').length;
+    const completedFeedbacks = feedbacks.filter(f => f.status === 'completed').length;
+    const anonymousFeedbacks = feedbacks.filter(f => f.anonymous).length;
+    
+    // Category distribution
+    const categoryDistribution = {};
+    feedbacks.forEach(feedback => {
+      categoryDistribution[feedback.category] = (categoryDistribution[feedback.category] || 0) + 1;
+    });
+
+    // Urgency distribution
+    const urgencyDistribution = {};
+    feedbacks.forEach(feedback => {
+      urgencyDistribution[feedback.urgency] = (urgencyDistribution[feedback.urgency] || 0) + 1;
+    });
+
+    return {
+      totalFeedbacks,
+      pendingFeedbacks,
+      completedFeedbacks,
+      anonymousFeedbacks,
+      categoryDistribution,
+      urgencyDistribution
+    };
+  };
+
   const getEventAnalytics = () => {
     const totalEvents = events.length;
     const totalRegistrations = events.reduce((sum, event) => sum + event.registeredCount, 0);
@@ -209,6 +337,7 @@ const AdminPanel = () => {
   };
 
   const analytics = getEventAnalytics();
+  const feedbackAnalytics = getFeedbackAnalytics();
 
   const eventCategories = [
     { id: 'technical', name: 'Technical', icon: '💻' },
@@ -217,6 +346,37 @@ const AdminPanel = () => {
     { id: 'volunteer', name: 'Volunteer', icon: '🤝' },
     { id: 'competition', name: 'Competition', icon: '🏆' }
   ];
+
+  const feedbackCategories = [
+    { value: 'academic', label: 'Academic Programs', icon: '🎓' },
+    { value: 'clubs', label: 'Clubs & Organizations', icon: '👥' },
+    { value: 'facilities', label: 'Campus Facilities', icon: '🏛️' },
+    { value: 'events', label: 'Events & Activities', icon: '📅' },
+    { value: 'technology', label: 'Technology & Resources', icon: '💻' },
+    { value: 'sports', label: 'Sports & Recreation', icon: '⚽' },
+    { value: 'dining', label: 'Dining Services', icon: '🍽️' },
+    { value: 'housing', label: 'Housing & Residence', icon: '🏠' },
+    { value: 'other', label: 'Other Suggestions', icon: '💡' }
+  ];
+
+  const urgencyLabels = {
+    low: { label: 'Low', color: '#10b981', bgColor: 'rgba(16, 185, 129, 0.1)' },
+    medium: { label: 'Medium', color: '#f59e0b', bgColor: 'rgba(245, 158, 11, 0.1)' },
+    high: { label: 'High', color: '#ef4444', bgColor: 'rgba(239, 68, 68, 0.1)' },
+    critical: { label: 'Critical', color: '#dc2626', bgColor: 'rgba(220, 38, 38, 0.1)' }
+  };
+
+  const statusLabels = {
+    pending: { label: 'Pending', color: '#6b7280', bgColor: 'rgba(107, 114, 128, 0.1)' },
+    'in-progress': { label: 'In Progress', color: '#2563eb', bgColor: 'rgba(37, 99, 235, 0.1)' },
+    completed: { label: 'Completed', color: '#059669', bgColor: 'rgba(5, 150, 105, 0.1)' },
+    rejected: { label: 'Rejected', color: '#dc2626', bgColor: 'rgba(220, 38, 38, 0.1)' }
+  };
+
+  const filteredFeedbacks = feedbacks.filter(feedback => {
+    if (feedbackFilter === 'all') return true;
+    return feedback.status === feedbackFilter;
+  });
 
   return (
     <div className="admin-container">
@@ -256,17 +416,17 @@ const AdminPanel = () => {
             </div>
           </div>
           <div className="analytics-card glass-panel-enhanced">
-            <div className="analytics-icon">✅</div>
+            <div className="analytics-icon">💬</div>
             <div className="analytics-info">
-              <h3>Total Participants</h3>
-              <p>{analytics.totalParticipants}</p>
+              <h3>Total Feedbacks</h3>
+              <p>{feedbackAnalytics.totalFeedbacks}</p>
             </div>
           </div>
           <div className="analytics-card glass-panel-enhanced">
-            <div className="analytics-icon">⭐</div>
+            <div className="analytics-icon">⏳</div>
             <div className="analytics-info">
-              <h3>Points Distributed</h3>
-              <p>{analytics.totalPointsDistributed}</p>
+              <h3>Pending Feedbacks</h3>
+              <p>{feedbackAnalytics.pendingFeedbacks}</p>
             </div>
           </div>
         </div>
@@ -284,6 +444,12 @@ const AdminPanel = () => {
             onClick={() => setActiveTab('students')}
           >
             👥 Students & Points
+          </button>
+          <button 
+            className={`tab ${activeTab === 'feedback' ? 'active' : ''}`}
+            onClick={() => setActiveTab('feedback')}
+          >
+            💬 Student Feedback
           </button>
           <button 
             className={`tab ${activeTab === 'analytics' ? 'active' : ''}`}
@@ -430,6 +596,175 @@ const AdminPanel = () => {
           </div>
         )}
 
+        {/* Feedback Management */}
+        {activeTab === 'feedback' && (
+          <div className="tab-content">
+            <div className="feedback-management">
+              <div className="feedback-header">
+                <h2>Student Feedback Management</h2>
+                <div className="feedback-filters">
+                  <select 
+                    value={feedbackFilter}
+                    onChange={(e) => setFeedbackFilter(e.target.value)}
+                    className="filter-select"
+                  >
+                    <option value="all">All Feedback</option>
+                    <option value="pending">Pending</option>
+                    <option value="in-progress">In Progress</option>
+                    <option value="completed">Completed</option>
+                    <option value="rejected">Rejected</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="feedback-stats-grid">
+                <div className="stat-card glass-panel-enhanced">
+                  <div className="stat-icon pending">💬</div>
+                  <div className="stat-info">
+                    <h3>Pending</h3>
+                    <p>{feedbackAnalytics.pendingFeedbacks}</p>
+                  </div>
+                </div>
+                <div className="stat-card glass-panel-enhanced">
+                  <div className="stat-icon in-progress">🔄</div>
+                  <div className="stat-info">
+                    <h3>In Progress</h3>
+                    <p>{feedbacks.filter(f => f.status === 'in-progress').length}</p>
+                  </div>
+                </div>
+                <div className="stat-card glass-panel-enhanced">
+                  <div className="stat-icon completed">✅</div>
+                  <div className="stat-info">
+                    <h3>Completed</h3>
+                    <p>{feedbackAnalytics.completedFeedbacks}</p>
+                  </div>
+                </div>
+                <div className="stat-card glass-panel-enhanced">
+                  <div className="stat-icon anonymous">🎭</div>
+                  <div className="stat-info">
+                    <h3>Anonymous</h3>
+                    <p>{feedbackAnalytics.anonymousFeedbacks}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="feedback-list">
+                {filteredFeedbacks.length === 0 ? (
+                  <div className="empty-state glass-panel-enhanced">
+                    <div className="empty-icon">💬</div>
+                    <h3>No feedback found</h3>
+                    <p>No feedback matches the current filter criteria</p>
+                  </div>
+                ) : (
+                  filteredFeedbacks.map(feedback => (
+                    <div key={feedback.id} className="feedback-card glass-panel-enhanced">
+                      <div className="feedback-header">
+                        <div className="feedback-meta">
+                          <h3 className="feedback-title">{feedback.title}</h3>
+                          <div className="feedback-categories">
+                            <span 
+                              className="category-badge"
+                              style={{ 
+                                backgroundColor: feedbackCategories.find(c => c.value === feedback.category)?.color || '#6b7280'
+                              }}
+                            >
+                              {feedbackCategories.find(c => c.value === feedback.category)?.icon}
+                              {feedbackCategories.find(c => c.value === feedback.category)?.label}
+                            </span>
+                            <span 
+                              className="urgency-badge"
+                              style={{
+                                backgroundColor: urgencyLabels[feedback.urgency].bgColor,
+                                color: urgencyLabels[feedback.urgency].color
+                              }}
+                            >
+                              {urgencyLabels[feedback.urgency].label}
+                            </span>
+                            <span 
+                              className="status-badge"
+                              style={{
+                                backgroundColor: statusLabels[feedback.status].bgColor,
+                                color: statusLabels[feedback.status].color
+                              }}
+                            >
+                              {statusLabels[feedback.status].label}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="feedback-actions">
+                          <button 
+                            className="btn-view"
+                            onClick={() => setSelectedFeedback(feedback)}
+                          >
+                            View Details
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="feedback-content">
+                        <p className="feedback-description">{feedback.description}</p>
+                        
+                        <div className="feedback-details">
+                          <div className="detail-item">
+                            <span className="detail-label">Submitted by:</span>
+                            <span className="detail-value">
+                              {feedback.anonymous ? 'Anonymous' : `${feedback.studentName} (${feedback.studentEmail})`}
+                            </span>
+                          </div>
+                          <div className="detail-item">
+                            <span className="detail-label">Submitted on:</span>
+                            <span className="detail-value">
+                              {new Date(feedback.timestamp).toLocaleDateString()} at {new Date(feedback.timestamp).toLocaleTimeString()}
+                            </span>
+                          </div>
+                          {feedback.adminNotes && (
+                            <div className="detail-item">
+                              <span className="detail-label">Admin Notes:</span>
+                              <span className="detail-value">{feedback.adminNotes}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="feedback-quick-actions">
+                        <select 
+                          value={feedback.status}
+                          onChange={(e) => updateFeedbackStatus(feedback.id, e.target.value)}
+                          className="status-select"
+                        >
+                          <option value="pending">Mark as Pending</option>
+                          <option value="in-progress">Mark as In Progress</option>
+                          <option value="completed">Mark as Completed</option>
+                          <option value="rejected">Mark as Rejected</option>
+                        </select>
+                        
+                        <button 
+                          className="btn-notes"
+                          onClick={() => {
+                            const notes = prompt('Add admin notes:', feedback.adminNotes || '');
+                            if (notes !== null) {
+                              addAdminNotes(feedback.id, notes);
+                            }
+                          }}
+                        >
+                          Add Notes
+                        </button>
+                        
+                        <button 
+                          className="btn-delete"
+                          onClick={() => deleteFeedback(feedback.id)}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Analytics */}
         {activeTab === 'analytics' && (
           <div className="tab-content">
@@ -472,6 +807,53 @@ const AdminPanel = () => {
                             <span className="category-name">{category.name}</span>
                           </div>
                           <span className="category-points">{totalPoints} pts</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Feedback Analytics */}
+                <div className="chart-card glass-panel-enhanced">
+                  <h3>Feedback by Category</h3>
+                  <div className="category-stats">
+                    {feedbackCategories.map(category => {
+                      const categoryFeedbacks = feedbacks.filter(f => f.category === category.value);
+                      return (
+                        <div key={category.value} className="category-stat">
+                          <div className="category-info">
+                            <span className="category-icon">{category.icon}</span>
+                            <span className="category-name">{category.label}</span>
+                          </div>
+                          <span className="category-count">{categoryFeedbacks.length}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="chart-card glass-panel-enhanced">
+                  <h3>Feedback Status Distribution</h3>
+                  <div className="status-stats">
+                    {Object.entries(statusLabels).map(([status, { label, color }]) => {
+                      const statusCount = feedbacks.filter(f => f.status === status).length;
+                      const percentage = (statusCount / feedbacks.length) * 100;
+                      return (
+                        <div key={status} className="status-stat">
+                          <div className="status-info">
+                            <span className="status-label">{label}</span>
+                            <span className="status-count">{statusCount}</span>
+                          </div>
+                          <div className="progress-bar">
+                            <div 
+                              className="progress-fill"
+                              style={{
+                                width: `${percentage}%`,
+                                backgroundColor: color
+                              }}
+                            ></div>
+                          </div>
+                          <span className="status-percentage">{Math.round(percentage)}%</span>
                         </div>
                       );
                     })}
@@ -607,6 +989,122 @@ const AdminPanel = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Feedback Detail Modal */}
+      {selectedFeedback && (
+        <div className="modal-overlay">
+          <div className="modal-content glass-panel-enhanced">
+            <div className="modal-header">
+              <h2>Feedback Details</h2>
+              <button 
+                className="close-btn"
+                onClick={() => setSelectedFeedback(null)}
+              >
+                ×
+              </button>
+            </div>
+            
+            <div className="feedback-detail">
+              <div className="detail-section">
+                <h3>{selectedFeedback.title}</h3>
+                <div className="detail-meta">
+                  <span className="category">
+                    {feedbackCategories.find(c => c.value === selectedFeedback.category)?.icon}
+                    {feedbackCategories.find(c => c.value === selectedFeedback.category)?.label}
+                  </span>
+                  <span 
+                    className="urgency"
+                    style={{ color: urgencyLabels[selectedFeedback.urgency].color }}
+                  >
+                    {urgencyLabels[selectedFeedback.urgency].label} Priority
+                  </span>
+                  <span 
+                    className="status"
+                    style={{ color: statusLabels[selectedFeedback.status].color }}
+                  >
+                    {statusLabels[selectedFeedback.status].label}
+                  </span>
+                </div>
+              </div>
+
+              <div className="detail-section">
+                <h4>Description</h4>
+                <p>{selectedFeedback.description}</p>
+              </div>
+
+              <div className="detail-section">
+                <h4>Submission Details</h4>
+                <div className="submission-details">
+                  <div className="detail-row">
+                    <span className="detail-label">Submitted by:</span>
+                    <span className="detail-value">
+                      {selectedFeedback.anonymous ? 'Anonymous' : `${selectedFeedback.studentName} (${selectedFeedback.studentEmail})`}
+                    </span>
+                  </div>
+                  <div className="detail-row">
+                    <span className="detail-label">Submitted on:</span>
+                    <span className="detail-value">
+                      {new Date(selectedFeedback.timestamp).toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="detail-row">
+                    <span className="detail-label">Anonymous:</span>
+                    <span className="detail-value">
+                      {selectedFeedback.anonymous ? 'Yes' : 'No'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {selectedFeedback.adminNotes && (
+                <div className="detail-section">
+                  <h4>Admin Notes</h4>
+                  <p>{selectedFeedback.adminNotes}</p>
+                </div>
+              )}
+
+              <div className="detail-actions">
+                <select 
+                  value={selectedFeedback.status}
+                  onChange={(e) => {
+                    updateFeedbackStatus(selectedFeedback.id, e.target.value);
+                    setSelectedFeedback({...selectedFeedback, status: e.target.value});
+                  }}
+                  className="status-select"
+                >
+                  <option value="pending">Pending</option>
+                  <option value="in-progress">In Progress</option>
+                  <option value="completed">Completed</option>
+                  <option value="rejected">Rejected</option>
+                </select>
+
+                <button 
+                  className="btn-notes"
+                  onClick={() => {
+                    const notes = prompt('Add or edit admin notes:', selectedFeedback.adminNotes || '');
+                    if (notes !== null) {
+                      addAdminNotes(selectedFeedback.id, notes);
+                      setSelectedFeedback({...selectedFeedback, adminNotes: notes});
+                    }
+                  }}
+                >
+                  {selectedFeedback.adminNotes ? 'Edit Notes' : 'Add Notes'}
+                </button>
+
+                <button 
+                  className="btn-delete"
+                  onClick={() => {
+                    deleteFeedback(selectedFeedback.id);
+                    setSelectedFeedback(null);
+                  }}
+                >
+                  Delete Feedback
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

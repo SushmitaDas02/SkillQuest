@@ -15,82 +15,131 @@ export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Mock login function
-  const login = async (email, password) => {
+  // Mock users database
+  const mockUsers = [
+    {
+      id: 1,
+      email: 'student@university.edu',
+      password: 'password123',
+      fullName: 'Demo Student',
+      userType: 'student',
+      studentId: 'STU2024001',
+      department: 'Computer Science',
+      year: '3rd Year',
+      avatar: 'https://ui-avatars.com/api/?name=Demo+Student&background=6366f1&color=fff'
+    },
+    {
+      id: 2,
+      email: 'admin@university.edu',
+      password: 'admin123',
+      fullName: 'Campus Admin',
+      userType: 'admin',
+      role: 'Administrator',
+      avatar: 'https://ui-avatars.com/api/?name=Campus+Admin&background=059669&color=fff'
+    }
+  ];
+
+  useEffect(() => {
+    const savedUser = localStorage.getItem('currentUser');
+    if (savedUser) {
+      try {
+        setCurrentUser(JSON.parse(savedUser));
+      } catch (error) {
+        console.error('Error parsing saved user:', error);
+        localStorage.removeItem('currentUser');
+      }
+    }
+    setLoading(false);
+  }, []);
+
+  const login = async (email, password, userType) => {
     setLoading(true);
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Basic validation
-      if (!email || !password) {
-        throw new Error('Email and password are required');
-      }
-
-      if (password.length < 6) {
-        throw new Error('Password must be at least 6 characters');
-      }
-
-      // Mock authentication - accept any valid email/password combination
-      const mockUser = {
-        id: '1',
-        email: email,
-        fullName: email.split('@')[0], // Use email prefix as name for demo
-        userType: 'student',
-        avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(email.split('@')[0])}&background=7c3aed&color=fff`,
-        studentId: 'STU001',
-        department: 'Computer Science'
-      };
-
-      setCurrentUser(mockUser);
-      localStorage.setItem('currentUser', JSON.stringify(mockUser));
+      // Find user with matching credentials
+      const user = mockUsers.find(u => 
+        u.email === email && 
+        u.password === password && 
+        u.userType === userType
+      );
       
-      return mockUser;
+      if (user) {
+        // Remove password before storing
+        const { password: _, ...userWithoutPassword } = user;
+        setCurrentUser(userWithoutPassword);
+        localStorage.setItem('currentUser', JSON.stringify(userWithoutPassword));
+        return userWithoutPassword;
+      } else {
+        throw new Error('Invalid email, password, or user type');
+      }
     } catch (error) {
-      throw new Error(error.message || 'Login failed. Please check your credentials.');
+      throw new Error(error.message);
     } finally {
       setLoading(false);
     }
   };
 
-  // Mock signup function
   const signup = async (userData) => {
     setLoading(true);
     try {
       await new Promise(resolve => setTimeout(resolve, 1500));
-      
+
       // Validation
       if (!userData.email || !userData.password || !userData.fullName) {
-        throw new Error('All fields are required');
+        throw new Error('Please fill all required fields');
       }
 
       if (userData.password.length < 6) {
         throw new Error('Password must be at least 6 characters');
       }
 
-      if (userData.userType === 'admin' && userData.adminCode !== 'ADMIN2024') {
-        throw new Error('Invalid admin access code');
+      if (userData.userType === 'student' && !userData.department) {
+        throw new Error('Please select your department');
       }
 
-      // Create mock user
+      if (userData.userType === 'admin') {
+        if (!userData.adminCode) {
+          throw new Error('Admin access code is required');
+        }
+        if (userData.adminCode !== 'ADMIN2024') {
+          throw new Error('Invalid admin access code');
+        }
+      }
+
+      // Check if email exists
+      if (mockUsers.find(u => u.email === userData.email)) {
+        throw new Error('Email already exists');
+      }
+
+      // Create new user
       const newUser = {
-        id: Date.now().toString(),
+        id: Date.now(),
         email: userData.email,
+        password: userData.password,
         fullName: userData.fullName,
         userType: userData.userType,
-        avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.fullName)}&background=7c3aed&color=fff`,
         ...(userData.userType === 'student' && {
-          studentId: userData.studentId || 'STU' + Date.now().toString().slice(-4),
-          department: userData.department || 'General Studies'
-        })
+          studentId: `STU${Date.now()}`,
+          department: userData.department,
+          year: userData.year || '1st Year'
+        }),
+        ...(userData.userType === 'admin' && {
+          role: 'Administrator'
+        }),
+        avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.fullName)}&background=${
+          userData.userType === 'admin' ? '059669' : '6366f1'
+        }&color=fff`
       };
 
-      setCurrentUser(newUser);
-      localStorage.setItem('currentUser', JSON.stringify(newUser));
-      
-      return newUser;
+      // Remove password from stored user
+      const { password: _, ...userWithoutPassword } = newUser;
+      setCurrentUser(userWithoutPassword);
+      localStorage.setItem('currentUser', JSON.stringify(userWithoutPassword));
+      return userWithoutPassword;
     } catch (error) {
-      throw new Error(error.message || 'Signup failed. Please try again.');
+      throw new Error(error.message);
     } finally {
       setLoading(false);
     }
@@ -100,20 +149,6 @@ export const AuthProvider = ({ children }) => {
     setCurrentUser(null);
     localStorage.removeItem('currentUser');
   };
-
-  // Check for stored user on app load
-  useEffect(() => {
-    const storedUser = localStorage.getItem('currentUser');
-    if (storedUser) {
-      try {
-        setCurrentUser(JSON.parse(storedUser));
-      } catch (error) {
-        console.error('Error parsing stored user:', error);
-        localStorage.removeItem('currentUser');
-      }
-    }
-    setLoading(false);
-  }, []);
 
   const value = {
     currentUser,
